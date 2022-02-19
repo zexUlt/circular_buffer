@@ -112,4 +112,5 @@ BOOST_AUTO_TEST_CASE( element_access_test )
 
     BOOST_REQUIRE_EQUAL(rb.front(), rb[0]);
     BOOST_REQUIRE_EQUAL(rb.back(), rb[2]);
+    BOOST_REQUIRE_EQUAL(rb[1], 2);
 }
