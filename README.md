@@ -1,4 +1,4 @@
-# ciricular_buffer
+# circular_buffer
 
 This is yet another implementation of STL-styled fixed-size ring buffer. [Wiki](https://en.wikipedia.org/wiki/Circular_buffer)
 
