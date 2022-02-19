@@ -1,87 +1,116 @@
-#include <iostream>
-
 #include "CiricullarBuffer.hpp"
+#define BOOST_TEST_MODULE Testing
+#include "boost/test/unit_test.hpp"
 
-
-int main(int argc, char** argv)
+BOOST_AUTO_TEST_CASE( constructors_test )
 {
-    CiricullarBuffer<3, int> buf;
+    CiricullarBuffer<3, int> rb;
+    BOOST_CHECK_EQUAL(rb.empty(), true);
+    BOOST_CHECK_EQUAL(rb.full(), false);
+    BOOST_CHECK_EQUAL(rb.size(), 0);
 
-    std::cout << "Is empty: " << buf.empty() << '\n';
-    std::cout << "Is full: " << buf.full() << '\n';
-    std::cout << "Capacity: " << buf.capacity() << '\n';
-    std::cout << "Size: " << buf.size() << '\n';
-    
-    buf.push_back(1); // 1
-    std::cout << buf[0] << '\n';
-    buf.push_back(2); // 1 2
-    std::cout << buf[0] << " " << buf[1] << '\n';
-    buf.push_back(3); // 1 2 3
-    std::cout << buf[0] << " " << buf[1] << " " << buf[2] << '\n';
-    buf.push_back(4); // 2 3 4
-    std::cout << buf[0] << " " << buf[1] << " " << buf[2] << '\n';
-    buf.push_back(5); // 3 4 5
-    std::cout << buf[0] << " " << buf[1] << " " << buf[2] << '\n';
-    buf.push_back(6); // 4 5 6
-    std::cout << buf[0] << " " << buf[1] << " " << buf[2] << '\n';
-    buf.push_front(2); // 2 4 5
-    std::cout << buf[0] << " " << buf[1] << " " << buf[2] << '\n';
-    buf.push_front(1); // 1 2 5
-    std::cout << buf[0] << " " << buf[1] << " " << buf[2] << '\n';
-    buf.push_front(3); // 3 1 2
-    std::cout << buf[0] << " " << buf[1] << " " << buf[2] << '\n';
+    CiricullarBuffer<3, int> rb1{1, 2, 3};
+    BOOST_CHECK_EQUAL(rb1.empty(), false);
+    BOOST_CHECK_EQUAL(rb1.full(), true);
+    BOOST_CHECK_EQUAL(rb1.size(), 3);
+    BOOST_CHECK_EQUAL(rb1.front(), 1);
+    BOOST_CHECK_EQUAL(rb1.back(), 3);
 
-    std::cout << "Is empty: " << buf.empty() << '\n';
-    std::cout << "Is full: " << buf.full() << '\n';
-    std::cout << "Capacity: " << buf.capacity() << '\n';
-    std::cout << "Size: " << buf.size() << '\n';
-    
-    // std::cout << *buf.begin() << " " << *(++buf.begin()) << " " << *(buf.end() - 1);
-    auto it = buf.begin();
-    /*
-        В общем, проблема такая: неправильно сравниваются итераторы, из-за чего получается, что они никогда не будут равны
-        Ниже в комментах написан вывод, который пишется из оператора сравнения итераторов
-        Получается так, что, когда оффсеты равны, адреса не равны
-        Потому что _head (конец очереди) стоит всегда на первом элементе при заполненном буфере
-        А когда _tail (начало очереди) доходит до _head, его оффсет сбрасывается в 0 (что верно вообще)
-    */
-    /**
-     * 0 2
-     * 0x7ffee35496c0 0x7ffee35496c0
-     * 0x7ffee35496c0 0x7ffee35496c0
-     * **/
-    std::cout << (it == buf.end()) << "\n\n";
-    std::cout << *it << '\n';
+    rb = rb;
+    BOOST_CHECK_EQUAL(rb.empty(), true);
+    BOOST_CHECK_EQUAL(rb.full(), false);
+    BOOST_CHECK_EQUAL(rb.size(), 0);
+
+    CiricullarBuffer<3, int> rb2(rb1);
+    BOOST_CHECK_EQUAL(rb2.empty(), false);
+    BOOST_CHECK_EQUAL(rb2.full(), true);
+    BOOST_CHECK_EQUAL(rb2.size(), 3);
+    BOOST_CHECK_EQUAL(rb2.front(), 1);
+    BOOST_CHECK_EQUAL(rb2.back(), 3);
+
+    rb = rb1;
+    BOOST_CHECK_EQUAL(rb.empty(), false);
+    BOOST_CHECK_EQUAL(rb.full(), true);
+    BOOST_CHECK_EQUAL(rb.size(), 3);
+    BOOST_CHECK_EQUAL(rb.front(), 1);
+    BOOST_CHECK_EQUAL(rb.back(), 3);
+}
+
+BOOST_AUTO_TEST_CASE( iterators_test )
+{
+    CiricullarBuffer<3, int> rb{1, 2, 3};
+    BOOST_REQUIRE_EQUAL(*rb.begin(), 1);
+    auto it = rb.begin();
+    BOOST_CHECK_EQUAL(*it, 1);
     ++it;
-    /**
-     * 1 2
-     * 0x7ffee35496c4 0x7ffee35496c0
-     * 0x7ffee35496c0 0x7ffee35496c0
-     * **/
-    std::cout << (it == buf.end()) << "\n\n";
-    std::cout << *it << '\n';
+    BOOST_CHECK_EQUAL(*it, 2);
     ++it;
-    /**
-     * 2 2
-     * 0x7ffee35496c8 0x7ffee35496c0
-     * 0x7ffee35496c0 0x7ffee35496c0
-     *  **/
-    std::cout << (it == buf.end()) << "\n\n";
-    std::cout << *it << '\n';
+    BOOST_CHECK_EQUAL(*it, 3);
     ++it;
-    std::cout << *buf.end() << '\n';
-    /**
-     * 0 2
-     * 0x7ffee35496c0 0x7ffee35496c0
-     * 0x7ffee35496c0 0x7ffee35496c0
-     * **/
-    std::cout << (it == buf.end()) << "\n\n";
-
-
-    for(auto it = buf.begin(); it != buf.end(); ++it){
-        std::cout << *it << " ";
+    if(it != rb.end()){
+        BOOST_FAIL("it != rb1.end().");
     }
 
-    std::cout << '\n';
-    return 0;
+    it = rb.begin();
+    BOOST_CHECK_EQUAL(*(it++), 1);
+    BOOST_CHECK_EQUAL(*it, 2);
+
+    auto it1 = rb.begin();
+    auto it2 = rb.begin();
+    if(it1 != it2){
+        BOOST_FAIL("it1 != it2, where it1 == it2 == rb.begin().");
+    }
+
+}
+
+BOOST_AUTO_TEST_CASE( container_modification_test )
+{
+    CiricullarBuffer<3, int> rb;
+
+    rb.push_back(1); // 1
+    BOOST_REQUIRE_EQUAL(rb.back(), 1);
+    BOOST_REQUIRE_EQUAL(rb.front(), 1);
+    BOOST_CHECK_EQUAL(rb.size(), 1);
+    BOOST_CHECK_EQUAL(rb.empty(), false);
+    BOOST_CHECK_EQUAL(rb.full(), false);
+
+    rb.push_back(2); // 1 2
+    BOOST_REQUIRE_EQUAL(rb.back(), 2);
+    BOOST_REQUIRE_EQUAL(rb.front(), 1);
+    BOOST_CHECK_EQUAL(rb.size(), 2);
+    BOOST_CHECK_EQUAL(rb.empty(), false);
+    BOOST_CHECK_EQUAL(rb.full(), false);
+
+    rb.push_front(3); // 3 1 2
+    BOOST_REQUIRE_EQUAL(rb.front(), 3);
+    BOOST_CHECK_EQUAL(rb.size(), 3);
+    BOOST_CHECK_EQUAL(rb.empty(), false);
+    BOOST_CHECK_EQUAL(rb.full(), true);
+
+    rb.push_back(4); // 1 2 4
+    auto it = rb.begin();
+    BOOST_REQUIRE_EQUAL(*it, 1);
+    ++it;
+    BOOST_REQUIRE_EQUAL(*it, 2);
+    ++it;
+    BOOST_REQUIRE_EQUAL(*it, 4);
+
+    BOOST_REQUIRE_EQUAL(rb.pop_front(), 1);
+    BOOST_REQUIRE_EQUAL(rb.front(), 2);
+    BOOST_CHECK_EQUAL(rb.size(), 2);
+    BOOST_CHECK_EQUAL(rb.full(), false);
+
+    rb.clear();
+    BOOST_CHECK_EQUAL(rb.size(), 0);
+    BOOST_CHECK_EQUAL(rb.empty(), true);
+    BOOST_CHECK_EQUAL(rb.full(), false);
+}
+
+BOOST_AUTO_TEST_CASE( element_access_test )
+{
+    CiricullarBuffer<3, int> rb{1, 2, 3};
+
+    BOOST_REQUIRE_EQUAL(rb.front(), rb[0]);
+    BOOST_REQUIRE_EQUAL(rb.back(), rb[2]);
+    BOOST_REQUIRE_EQUAL(rb[1], 2);
 }
