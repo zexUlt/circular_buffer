@@ -38,7 +38,8 @@ public:
     CiricullarBuffer(const CiricullarBuffer<SIZE, T>& other) : 
             _head(other._head), 
             _tail(other._tail), 
-            isFull(other.isFull)
+            isFull(other.isFull),
+            _size(other._size)
     {
         std::copy(other._data, other._data + SIZE, _data);
     }
@@ -46,8 +47,14 @@ public:
     // Copy-assignment
     CiricullarBuffer<SIZE, T>& operator=(const CiricullarBuffer<SIZE, T>& other)
     {
-        CiricullarBuffer<SIZE, T> copy(other);
-        std::swap(*this, copy);
+        // Self-assignment guard
+        if(*this == other){
+            return *this;
+        }
+
+        CiricullarBuffer<SIZE, T> local_copy(other);
+        this->swap(local_copy);
+        
         return *this;
     }
 
@@ -66,7 +73,7 @@ public:
 
         iterator(pointer init_ptr, pointer ptr, uint16_t offset) : _init_ptr(init_ptr), _ptr(ptr), _offset(offset){}
 
-        self_type& operator=(self_type& other)
+        self_type& operator=(const self_type& other)
         {
             this->_ptr = other._ptr;
             this->_offset = other._offset;
@@ -76,18 +83,18 @@ public:
 
         reference operator*() const { return *(this->_ptr); }
         pointer operator->() const { return this->_ptr; }
-        
+
         // Prefix increment
         self_type& operator++() 
         { 
-            this->_offset++;
+            ++this->_offset;
             this->_ptr = this->_init_ptr + this->_offset;
             return *this; 
         } 
         // Postfix increment
-        self_type& operator++(int)  
+        self_type operator++(int)  
         { 
-            auto tmp = *this;
+            self_type tmp(*this);
             ++(*this); 
             return tmp; 
         }
@@ -122,6 +129,8 @@ public:
 
     void push_front(T item)
     {
+        // This calculates backward spin by modulo SIZE
+        // Since C++ allows negative result of modulo operation
         this->_tail = (SIZE + (this->_tail - 1) % SIZE) % SIZE;
 
         if(this->isFull){   
@@ -140,7 +149,7 @@ public:
         // 1. Return empty element of type T. I.e. T()
         // 2. Function will return std::optional<T>, when empty -- std::nullopt
         // 3. Like STL containers abort execution
-        assertm(!this->empty(), "Container is empty"); 
+        assert(!this->empty() && "Container is empty"); 
         
         // Get data and pop element from buffer (move tail)
         auto val = this->_data[this->_tail];
@@ -158,9 +167,30 @@ public:
         this->_size = 0;
     }
 
+    void swap(CiricullarBuffer<SIZE, T>& other)
+    {
+        other._head ^= this->_head;
+        this->_head ^= other._head;
+        other._head ^= this->_head;
+
+        other._tail ^= this->_tail;
+        this->_tail ^= other._tail;
+        other._tail ^= this->_tail;
+
+        other._size ^= this->_size;
+        this->_size ^= other._size;
+        other._size ^= this->_size;
+
+        other.isFull ^= this->isFull;
+        this->isFull ^= other.isFull;
+        other.isFull ^= this->isFull;
+
+        std::swap(this->_data, other._data);
+    }
+
     // Element access
     T front() const { return this->_data[this->_tail]; }
-    T back() const { return this->_data[this->_head]; }
+    T back() const { return this->_data[(SIZE + (this->_head - 1) % SIZE) % SIZE]; }
     T operator[](int idx)
     {
         assert(idx < this->_size);
@@ -184,4 +214,17 @@ public:
         return _size;
     }
     constexpr uint16_t capacity() const { return SIZE; }
+
+    // Comparison operators
+    bool operator==(const CiricullarBuffer<SIZE, T>& other) 
+    { 
+        return (
+            this->_data == other._data && 
+            this->_head == other._head && 
+            this->_tail == other._tail &&
+            this->_size == other._size
+        ); 
+    }
+
+    bool operator!=(const CiricullarBuffer<SIZE, T>& other) { return !(*this == other); }
 };
