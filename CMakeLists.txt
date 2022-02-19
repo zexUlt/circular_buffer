@@ -4,7 +4,7 @@ project(circular_buffer)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_BUILD_TYPE Debug)
 
-add_executable(${PROJECT_NAME} main.cpp CircularBuffer.hpp)
+add_executable(${PROJECT_NAME} tests.cpp CircularBuffer.hpp)
 
 if(ENABLE_TESTING)
     set(Boost_USE_STATIC_LIBS ON)
