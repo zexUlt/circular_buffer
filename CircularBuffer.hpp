@@ -9,6 +9,27 @@ template<uint16_t SIZE, class T>
 class CircularBuffer
 {
 private:
+    void swap(CircularBuffer<SIZE, T>& other)
+    {
+        other._head ^= this->_head;
+        this->_head ^= other._head;
+        other._head ^= this->_head;
+
+        other._tail ^= this->_tail;
+        this->_tail ^= other._tail;
+        other._tail ^= this->_tail;
+
+        other._size ^= this->_size;
+        this->_size ^= other._size;
+        other._size ^= this->_size;
+
+        other.isFull ^= this->isFull;
+        this->isFull ^= other.isFull;
+        other.isFull ^= this->isFull;
+
+        std::swap(this->_data, other._data);
+    }
+    
     bool isFull;
     uint16_t _head; 
     uint16_t _tail;
@@ -165,27 +186,6 @@ public:
         this->_head = this->_tail;
         this->isFull = false;
         this->_size = 0;
-    }
-
-    void swap(CircularBuffer<SIZE, T>& other)
-    {
-        other._head ^= this->_head;
-        this->_head ^= other._head;
-        other._head ^= this->_head;
-
-        other._tail ^= this->_tail;
-        this->_tail ^= other._tail;
-        other._tail ^= this->_tail;
-
-        other._size ^= this->_size;
-        this->_size ^= other._size;
-        other._size ^= this->_size;
-
-        other.isFull ^= this->isFull;
-        this->isFull ^= other.isFull;
-        other.isFull ^= this->isFull;
-
-        std::swap(this->_data, other._data);
     }
 
     // Element access
