@@ -9,17 +9,50 @@ template<uint16_t SIZE, class T>
 class CiricullarBuffer
 {
 private:
-    T _data[SIZE]; // Buffer itself
+    bool isFull;
     uint16_t _head; 
     uint16_t _tail;
     uint16_t _size;
-    bool isFull;
+    T _data[SIZE];
 
 public:
-    explicit CiricullarBuffer() : _head(0), _tail(0), isFull(false)
-    {
-        
+    // Basic initialization
+    explicit CiricullarBuffer() : 
+            _head(0), 
+            _tail(0), 
+            isFull(false), 
+            _size(0) {} 
+
+    // Initialization of underlying memory through variadic template a.k.a list initialization
+    template<typename... S>
+    CiricullarBuffer(S... data) : 
+            _data{data...}, 
+            _head(sizeof...(S) % SIZE), 
+            _tail(0), 
+            isFull(sizeof...(S) == SIZE), 
+            _size(sizeof...(S))
+    { 
     }
+    
+    // Copy-constructor
+    CiricullarBuffer(const CiricullarBuffer<SIZE, T>& other) : 
+            _head(other._head), 
+            _tail(other._tail), 
+            isFull(other.isFull)
+    {
+        std::copy(other._data, other._data + SIZE, _data);
+    }
+
+    // Copy-assignment
+    CiricullarBuffer<SIZE, T>& operator=(const CiricullarBuffer<SIZE, T>& other)
+    {
+        CiricullarBuffer<SIZE, T> copy(other);
+        std::swap(*this, copy);
+        return *this;
+    }
+
+    // Default destructor since class does not holds any heap resources
+    ~CiricullarBuffer() = default;
 
     /** ITERATOR DEFINITION BEGIN **/
     struct iterator
@@ -43,14 +76,16 @@ public:
 
         reference operator*() const { return *(this->_ptr); }
         pointer operator->() const { return this->_ptr; }
-
-        self_type& operator++() // Prefix increment
+        
+        // Prefix increment
+        self_type& operator++() 
         { 
             this->_offset++;
             this->_ptr = this->_init_ptr + this->_offset;
             return *this; 
         } 
-        self_type& operator++(int)  // Postfix increment
+        // Postfix increment
+        self_type& operator++(int)  
         { 
             auto tmp = *this;
             ++(*this); 
@@ -59,9 +94,6 @@ public:
 
         bool operator==(const self_type& other) 
         {
-            // std::cout << this->_offset << " " << other._offset << '\n';
-            // std::cout << this->_ptr << " " << other._ptr << '\n';
-            // std::cout << _init_ptr << " " << other._init_ptr << '\n'; 
             return (this->_init_ptr == other._init_ptr) && (this->_ptr == other._ptr) && (this->_offset == other._offset); 
         }
         bool operator!=(const self_type& other) { return !(*this == other); }
@@ -85,7 +117,7 @@ public:
         this->_head = (this->_head + 1) % SIZE;
 
         this->isFull = (this->_head == this->_tail);
-        this->_size += static_cast<int>(this->_size != SIZE); // Имеются сомнения насчет этого каста, может лучше переписать через if?
+        this->_size += (this->_size != SIZE);
     }
 
     void push_front(T item)
@@ -99,14 +131,16 @@ public:
         this->_data[this->_tail] = item;
 
         this->isFull = (this->_head == this->_tail);
-        this->_size += static_cast<int>(this->_size != SIZE); // Имеются сомнения насчет этого каста, может лучше переписать через if?
+        this->_size += (this->_size != SIZE);
     }
 
     T pop_front()
     {
-        if(this->empty()){
-            return T();
-        }
+        // There are 3 ways of handling empty container:
+        // 1. Return empty element of type T. I.e. T()
+        // 2. Function will return std::optional<T>, when empty -- std::nullopt
+        // 3. Like STL containers abort execution
+        assertm(!this->empty(), "Container is empty"); 
         
         // Get data and pop element from buffer (move tail)
         auto val = this->_data[this->_tail];
@@ -137,26 +171,16 @@ public:
         assert(idx < this->_size);
         return this->_data[(this->_tail + idx) % SIZE];
     } 
-
-    // Iteration
     auto begin() { return iterator(this->_data, &(this->_data[this->_tail]), 0); }
     auto end() { return iterator(this->_data, &(this->_data[this->_tail + this->_size]), this->_size); }
+
+    auto data() const { return this->_data; };
 
     // State determination
     bool empty() const { return (!this->isFull && (this->_head == this->_tail)); }
     bool full() const { return this->isFull; }
     uint16_t size() const
     {
-        // uint16_t __size = SIZE;
-
-        // if(!this->isFull){
-        //     if(this->_head >= this->_tail){
-        //         __size = this->_head - this->_tail; 
-        //     }else{
-        //         __size = SIZE + this->_head - this->_tail;
-        //     }
-        // }
-
         return _size;
     }
     constexpr uint16_t capacity() const { return SIZE; }
