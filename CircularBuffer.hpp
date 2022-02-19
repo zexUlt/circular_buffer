@@ -6,7 +6,7 @@
 #include <iostream>
 
 template<uint16_t SIZE, class T>
-class CiricullarBuffer
+class CircularBuffer
 {
 private:
     bool isFull;
@@ -17,7 +17,7 @@ private:
 
 public:
     // Basic initialization
-    explicit CiricullarBuffer() : 
+    explicit CircularBuffer() : 
             _head(0), 
             _tail(0), 
             isFull(false), 
@@ -25,7 +25,7 @@ public:
 
     // Initialization of underlying memory through variadic template a.k.a list initialization
     template<typename... S>
-    CiricullarBuffer(S... data) : 
+    CircularBuffer(S... data) : 
             _data{data...}, 
             _head(sizeof...(S) % SIZE), 
             _tail(0), 
@@ -35,7 +35,7 @@ public:
     }
     
     // Copy-constructor
-    CiricullarBuffer(const CiricullarBuffer<SIZE, T>& other) : 
+    CircularBuffer(const CircularBuffer<SIZE, T>& other) : 
             _head(other._head), 
             _tail(other._tail), 
             isFull(other.isFull),
@@ -45,21 +45,21 @@ public:
     }
 
     // Copy-assignment
-    CiricullarBuffer<SIZE, T>& operator=(const CiricullarBuffer<SIZE, T>& other)
+    CircularBuffer<SIZE, T>& operator=(const CircularBuffer<SIZE, T>& other)
     {
         // Self-assignment guard
         if(*this == other){
             return *this;
         }
 
-        CiricullarBuffer<SIZE, T> local_copy(other);
+        CircularBuffer<SIZE, T> local_copy(other);
         this->swap(local_copy);
         
         return *this;
     }
 
     // Default destructor since class does not holds any heap resources
-    ~CiricullarBuffer() = default;
+    ~CircularBuffer() = default;
 
     /** ITERATOR DEFINITION BEGIN **/
     struct iterator
@@ -167,7 +167,7 @@ public:
         this->_size = 0;
     }
 
-    void swap(CiricullarBuffer<SIZE, T>& other)
+    void swap(CircularBuffer<SIZE, T>& other)
     {
         other._head ^= this->_head;
         this->_head ^= other._head;
@@ -216,7 +216,7 @@ public:
     constexpr uint16_t capacity() const { return SIZE; }
 
     // Comparison operators
-    bool operator==(const CiricullarBuffer<SIZE, T>& other) 
+    bool operator==(const CircularBuffer<SIZE, T>& other) 
     { 
         return (
             this->_data == other._data && 
@@ -226,5 +226,5 @@ public:
         ); 
     }
 
-    bool operator!=(const CiricullarBuffer<SIZE, T>& other) { return !(*this == other); }
+    bool operator!=(const CircularBuffer<SIZE, T>& other) { return !(*this == other); }
 };
