@@ -6,6 +6,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(${PROJECT_NAME} tests.cpp CircularBuffer.hpp)
 
+
 if(ENABLE_TESTING)
     set(Boost_USE_STATIC_LIBS ON)
     find_package(
